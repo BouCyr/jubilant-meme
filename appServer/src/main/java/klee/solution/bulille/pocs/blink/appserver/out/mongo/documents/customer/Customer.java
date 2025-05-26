@@ -7,6 +7,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.customer.Contract;
 
 @Document("users")
 public class Customer {
@@ -18,7 +19,7 @@ public class Customer {
     public String givenName;
     public LocalDate dateOfBirth;
 
-    public List<ContractType> contracts = new ArrayList<>();
+    public List<Contract> contracts = new ArrayList<>();
 
 
 

@@ -16,4 +16,8 @@ public class Activity {
     public String salesSystemId;
 
     public LocalDate doneOn;
+
+    public String contractId; // Changed from ObjectId to String
+    public org.bson.types.ObjectId customerId;
+    public double unitsConsumed;
 }

@@ -1,6 +1,5 @@
 package klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.prestation;
 
-import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
