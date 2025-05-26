@@ -1,6 +1,6 @@
 package klee.solution.bulille.pocs.blink.appserver.in.http;
 
-import klee.solution.bulille.pocs.blink.appserver.in.http.dtos.ActivityInput;
+import klee.solution.bulille.pocs.blink.appserver.in.http.dtos.inputs.ActivityInput;
 import klee.solution.bulille.pocs.blink.appserver.middle.ActivityService;
 import klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.activity.Activity;
 

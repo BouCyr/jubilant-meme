@@ -1,4 +1,4 @@
-package klee.solution.bulille.pocs.blink.appserver.in.http.dtos;
+package klee.solution.bulille.pocs.blink.appserver.in.http.dtos.inputs;
 
 // Add validation annotations if desired (e.g., @NotBlank, @Min(1))
 public class SoldPrestationInput {

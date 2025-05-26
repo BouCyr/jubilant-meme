@@ -19,7 +19,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -47,17 +46,11 @@ public class ReportGenerationService {
         this.activityRepository = activityRepository;
         this.prestationRepository = prestationRepository;
 
-        String outputFolder = fileStorageProperties.getOutputFolderPath();
-        if (outputFolder == null || outputFolder.trim().isEmpty()) {
-            logger.error("Output folder path for reporting is not configured!");
-            this.outputReportingPath = Paths.get("./output_default_error"); // Fallback
-        } else {
-            this.outputReportingPath = Paths.get(outputFolder).toAbsolutePath();
-        }
+        this.outputReportingPath = fileStorageProperties.output();
 
         try {
             Files.createDirectories(this.outputReportingPath);
-            logger.info("Output (report) directory: {}", this.outputReportingPath.toString());
+            logger.info("Output (report) directory: {}", this.outputReportingPath);
         } catch (IOException e) {
             logger.error("Could not create output (report) directory!", e);
         }
@@ -123,9 +116,9 @@ public class ReportGenerationService {
         try (FileWriter writer = new FileWriter(reportFilePath.toFile());
              CSVWriter csvWriter = new CSVWriter(writer)) {
             csvWriter.writeAll(reportData);
-            logger.info("Successfully generated report: {}", reportFilePath.toString());
+            logger.info("Successfully generated report: {}", reportFilePath);
         } catch (IOException e) {
-            logger.error("Error writing report to CSV file {}: ", reportFilePath.toString(), e);
+            logger.error("Error writing report to CSV file {}: ", reportFilePath, e);
         }
     }
 }

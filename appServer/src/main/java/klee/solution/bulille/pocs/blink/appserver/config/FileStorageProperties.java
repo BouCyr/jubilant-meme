@@ -1,29 +1,12 @@
 package klee.solution.bulille.pocs.blink.appserver.config;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
-@Configuration
-@ConfigurationProperties(prefix = "project") // Matches the prefix in application.properties
-public class FileStorageProperties {
+import java.nio.file.Path;
 
-    private String inputFolderPath;
-    private String outputFolderPath;
-
-    // Standard getters and setters
-    public String getInputFolderPath() {
-        return inputFolderPath;
-    }
-
-    public void setInputFolderPath(String inputFolderPath) {
-        this.inputFolderPath = inputFolderPath;
-    }
-
-    public String getOutputFolderPath() {
-        return outputFolderPath;
-    }
-
-    public void setOutputFolderPath(String outputFolderPath) {
-        this.outputFolderPath = outputFolderPath;
-    }
+@Component
+public record FileStorageProperties(@Value("${project.input.folder.path}") Path input,
+                                    @Value("${project.archives.folder.path}") Path archives,
+                                    @Value("${project.output.folder.path}") Path output) {
 }

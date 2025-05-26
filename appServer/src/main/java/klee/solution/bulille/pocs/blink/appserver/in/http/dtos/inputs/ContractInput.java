@@ -1,4 +1,4 @@
-package klee.solution.bulille.pocs.blink.appserver.in.http.dtos;
+package klee.solution.bulille.pocs.blink.appserver.in.http.dtos.inputs;
 
 import klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.customer.ContractType;
 import java.time.LocalDate;

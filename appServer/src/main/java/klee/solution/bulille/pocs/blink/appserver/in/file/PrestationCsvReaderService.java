@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -32,24 +31,15 @@ public class PrestationCsvReaderService {
 
     public PrestationCsvReaderService(PrestationRepository prestationRepository, FileStorageProperties fileStorageProperties) {
         this.prestationRepository = prestationRepository;
-        // Ensure inputFolderPath is not null or empty before creating Path objects
-        String inputFolder = fileStorageProperties.getInputFolderPath();
-        if (inputFolder == null || inputFolder.trim().isEmpty()) {
-            logger.error("Input folder path is not configured!");
-            // This is a critical configuration error. Application might not function as expected.
-            // Consider throwing an exception or specific handling. For now, paths might be invalid.
-            this.inputPath = Paths.get("./input_default_error"); // Fallback, likely problematic
-            this.archivePath = Paths.get("./input_default_error/archive");
-        } else {
-            this.inputPath = Paths.get(inputFolder).toAbsolutePath();
-            this.archivePath = Paths.get(inputFolder, "archive").toAbsolutePath();
-        }
+
+        this.inputPath = fileStorageProperties.input();
+        this.archivePath = fileStorageProperties.archives();
 
         try {
             Files.createDirectories(this.inputPath);
             Files.createDirectories(this.archivePath);
-            logger.info("Input directory: {}", this.inputPath.toString());
-            logger.info("Archive directory: {}", this.archivePath.toString());
+            logger.info("Input directory: {}", this.inputPath);
+            logger.info("Archive directory: {}", this.archivePath);
         } catch (IOException e) {
             logger.error("Could not create input or archive directory!", e);
             // This could be a fatal error for this service's functionality.
@@ -112,15 +102,15 @@ public class PrestationCsvReaderService {
                          logger.warn("Skipping malformed line (not enough columns): {}", String.join(",", line));
                     }
                 }
-                // Move processed file to archive
-                archiveFile(csvFile);
+
 
             } catch (IOException | CsvValidationException e) {
                 logger.error("Error processing CSV file {}: ", CSV_FILENAME, e);
                 // Consider moving to a "failed" directory
+            }finally {
+                // Move processed file to archive
+                archiveFile(csvFile);
             }
-        } else {
-            // logger.trace("No {} file found in {}.", CSV_FILENAME, inputPath); // Can be too verbose
         }
     }
 
@@ -130,9 +120,9 @@ public class PrestationCsvReaderService {
             Path archivedFileName = Paths.get(CSV_FILENAME + "." + timestamp);
             Path targetPath = archivePath.resolve(archivedFileName);
             Files.move(fileToArchive, targetPath, StandardCopyOption.REPLACE_EXISTING);
-            logger.info("Archived processed file to: {}", targetPath.toString());
+            logger.info("Archived processed file to: {}", targetPath);
         } catch (IOException e) {
-            logger.error("Could not archive file {}: ", fileToArchive.toString(), e);
+            logger.error("Could not archive file {}: ", fileToArchive, e);
         }
     }
 }

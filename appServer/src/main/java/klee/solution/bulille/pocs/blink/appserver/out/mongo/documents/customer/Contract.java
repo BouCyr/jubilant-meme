@@ -1,7 +1,5 @@
 package klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.customer;
 
-import klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.customer.SoldPrestation;
-
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;

@@ -1,4 +1,4 @@
-package klee.solution.bulille.pocs.blink.appserver.in.http.dtos;
+package klee.solution.bulille.pocs.blink.appserver.in.http.dtos.inputs;
 
 import java.time.LocalDate;
 // Add validation annotations as needed (e.g., @NotNull, @FutureOrPresent for doneOn)
