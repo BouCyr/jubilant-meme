@@ -51,7 +51,7 @@ public class CustomerProcess {
         LOGGER.info("processCreateCustomer called for givenName: {}", customerInput.givenName());
         Customer customer = this.customerService.createCustomer(customerInput); // No change in call
         // Assuming customer.id() is the correct way to get the ID, which is typical for entities/records.
-        LOGGER.info("processCreateCustomer finished, customerId: {}", customer.id());
+        LOGGER.info("processCreateCustomer finished, customerId: {}", customer.id);
         return customer;
     }
 

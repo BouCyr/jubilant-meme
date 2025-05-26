@@ -52,7 +52,7 @@ class CustomerServiceImpl implements CustomerServiceApi {
 
     @Override
     // nameQuery can be null or empty, so it's not annotated with @NonNull
-    public Page<CustomerOutput> searchCustomers(String nameQuery, @NonNull Pageable pageable) {
+    public @NonNull Page<CustomerOutput> searchCustomers(String nameQuery, @NonNull Pageable pageable) {
         LOGGER.info("searchCustomers called with nameQuery: {}, pageable: {}", nameQuery, pageable);
         Page<Customer> entityPages;
         if (nameQuery == null || nameQuery.trim().isEmpty()) {
@@ -88,7 +88,7 @@ class CustomerServiceImpl implements CustomerServiceApi {
 
         try {
             Customer savedCustomer = this.customerStorageApi.save(customer); // Use customerStorageApi
-            LOGGER.info("Customer created successfully with id: {}", savedCustomer.id());
+            LOGGER.info("Customer created successfully with id: {}", savedCustomer.id);
             return savedCustomer;
         } catch (Exception e) {
             LOGGER.error("Error saving customer: {}", e.getMessage(), e);
@@ -108,28 +108,28 @@ class CustomerServiceImpl implements CustomerServiceApi {
         LOGGER.info("Found customer {} for adding contract.", customerId.id());
 
         // Validate ContractInput
-        if (contractInput.type() == ContractType.FREE_TRIAL) {
-            if (contractInput.endDate() == null) {
+        if (contractInput.type == ContractType.FREE_TRIAL) {
+            if (contractInput.endDate == null) {
                 LOGGER.warn("End date is required for FREE_TRIAL contracts. CustomerId: {}, Input: {}", customerId.id(), contractInput);
                 throw new IllegalArgumentException("End date is required for FREE_TRIAL contracts.");
             }
-            if (contractInput.startDate() != null && contractInput.endDate().isAfter(contractInput.startDate().plusMonths(1))) {
+            if (contractInput.startDate != null && contractInput.endDate.isAfter(contractInput.startDate.plusMonths(1))) {
                 LOGGER.warn("FREE_TRIAL contract end date cannot be more than one month after start date. CustomerId: {}, Input: {}", customerId.id(), contractInput);
                 throw new IllegalArgumentException("FREE_TRIAL contract end date cannot be more than one month after start date.");
             }
-        } else if (contractInput.type() == ContractType.PERMANENT) {
+        } else if (contractInput.type == ContractType.PERMANENT) {
             LOGGER.info("Processing PERMANENT contract type for customerId: {}", customerId.id());
         }
 
-        if (contractInput.startDate() == null) {
+        if (contractInput.startDate == null) {
             LOGGER.warn("Contract start date is required. CustomerId: {}, Input: {}", customerId.id(), contractInput);
             throw new IllegalArgumentException("Contract start date is required.");
         }
-        if (contractInput.type() != ContractType.PERMANENT && contractInput.endDate() == null) {
+        if (contractInput.type != ContractType.PERMANENT && contractInput.endDate == null) {
             LOGGER.warn("Contract end date is required for non-PERMANENT types. CustomerId: {}, Input: {}", customerId.id(), contractInput);
             throw new IllegalArgumentException("Contract end date is required for non-PERMANENT types.");
         }
-        if (contractInput.endDate() != null && contractInput.startDate().isAfter(contractInput.endDate())) {
+        if (contractInput.endDate != null && contractInput.startDate.isAfter(contractInput.endDate)) {
             LOGGER.warn("Contract start date cannot be after end date. CustomerId: {}, Input: {}", customerId.id(), contractInput);
             throw new IllegalArgumentException("Contract start date cannot be after end date.");
         }
@@ -139,35 +139,36 @@ class CustomerServiceImpl implements CustomerServiceApi {
         for (Contract existingContract : customer.contracts) {
             boolean overlaps = overlaps(contractInput, existingContract);
             if (overlaps) {
-                LOGGER.warn("New contract dates overlap with an existing contract. CustomerId: {}, NewContractInput: {}, ExistingContract: {}", customerId.id(), contractInput, existingContract);
+                LOGGER.warn("New contract dates overlap with an existing contract. CustomerId: {}, NewContractInput: {}, ExistingContract: {}",
+                        customerId.id(), contractInput, existingContract);
                 throw new IllegalArgumentException("New contract dates overlap with an existing contract.");
             }
         }
         LOGGER.debug("Overlap validation passed for customerId: {}", customerId.id());
 
         Contract newContract = new Contract();
-        newContract.type = contractInput.type();
-        newContract.start = contractInput.startDate();
-        newContract.end = (contractInput.type() == ContractType.PERMANENT && contractInput.endDate() == null) ? null : contractInput.endDate();
+        newContract.type = contractInput.type;
+        newContract.start = contractInput.startDate;
+        newContract.end = (contractInput.type == ContractType.PERMANENT && contractInput.endDate == null) ? null : contractInput.endDate;
 
-        if (contractInput.soldPrestations() == null || contractInput.soldPrestations().isEmpty()) {
+        if (contractInput.soldPrestations == null || contractInput.soldPrestations.isEmpty()) {
             LOGGER.warn("Contract must include at least one prestation. CustomerId: {}, Input: {}", customerId.id(), contractInput);
             throw new IllegalArgumentException("Contract must include at least one prestation.");
         }
         LOGGER.debug("Prestation presence validation passed for customerId: {}", customerId.id());
 
-        newContract.soldPrestations = contractInput.soldPrestations().stream().map(spInput -> {
+        newContract.soldPrestations = contractInput.soldPrestations.stream().map(spInput -> {
             LOGGER.debug("Processing sold prestation input: {} for customerId: {}", spInput, customerId.id());
-            this.prestationRepository.findById(spInput.salesSystemId())
+            this.prestationRepository.findById(spInput.salesSystemId)
                     .orElseThrow(() -> {
-                        LOGGER.warn("Prestation not found with salesSystemId: {} for customerId: {}", spInput.salesSystemId(), customerId.id());
-                        return new IllegalArgumentException("Prestation not found with salesSystemId: " + spInput.salesSystemId());
+                        LOGGER.warn("Prestation not found with salesSystemId: {} for customerId: {}", spInput.salesSystemId, customerId.id());
+                        return new IllegalArgumentException("Prestation not found with salesSystemId: " + spInput.salesSystemId);
                     });
 
             SoldPrestation soldPrestation = new SoldPrestation();
-            soldPrestation.salesSystemId = spInput.salesSystemId();
-            soldPrestation.units = spInput.units();
-            soldPrestation.totalBilledAmountForUnits = spInput.totalBilledAmountForUnits();
+            soldPrestation.salesSystemId = spInput.salesSystemId;
+            soldPrestation.units = spInput.units;
+            soldPrestation.totalBilledAmountForUnits = spInput.totalBilledAmountForUnits;
             if (soldPrestation.units <= 0) {
                 LOGGER.warn("Units for a sold prestation must be positive. CustomerId: {}, PrestationInput: {}", customerId.id(), spInput);
                 throw new IllegalArgumentException("Units for a sold prestation must be positive.");
@@ -192,22 +193,20 @@ class CustomerServiceImpl implements CustomerServiceApi {
     }
 
     private static boolean overlaps(@NonNull ContractInput contractInput, @NonNull Contract existingContract) {
-        if (contractInput.endDate() == null && existingContract.end == null && contractInput.type() == ContractType.PERMANENT && existingContract.type == ContractType.PERMANENT) {
-            if (existingContract.type == ContractType.PERMANENT && existingContract.end == null) {
-                throw new IllegalArgumentException("An open-ended PERMANENT contract already exists.");
-            }
+        if (contractInput.endDate == null && existingContract.end == null
+                && contractInput.type == ContractType.PERMANENT && existingContract.type == ContractType.PERMANENT) {
+            throw new IllegalArgumentException("An open-ended PERMANENT contract already exists.");
         }
 
         LocalDate existingContractEffectiveEnd = (existingContract.end == null) ? LocalDate.MAX : existingContract.end;
-        LocalDate newContractEffectiveEnd = (contractInput.endDate() == null && contractInput.type() == ContractType.PERMANENT) ? LocalDate.MAX : contractInput.endDate();
+        LocalDate newContractEffectiveEnd = (contractInput.endDate == null && contractInput.type == ContractType.PERMANENT) ? LocalDate.MAX : contractInput.endDate;
 
         if (newContractEffectiveEnd == null) {
             throw new IllegalArgumentException("New contract effective end date is null unexpectedly.");
         }
 
-        boolean overlaps = !contractInput.startDate().isAfter(existingContractEffectiveEnd) &&
+        return !contractInput.startDate.isAfter(existingContractEffectiveEnd) &&
                 !existingContract.start.isAfter(newContractEffectiveEnd);
-        return overlaps;
     }
 
     public static class CustomerNotFoundException extends RuntimeException {

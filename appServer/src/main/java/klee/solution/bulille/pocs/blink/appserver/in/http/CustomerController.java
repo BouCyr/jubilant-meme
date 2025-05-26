@@ -1,29 +1,17 @@
 package klee.solution.bulille.pocs.blink.appserver.in.http;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import klee.solution.bulille.pocs.blink.appserver.in.http.dtos.inputs.ContractInput;
+import klee.solution.bulille.pocs.blink.appserver.in.http.dtos.inputs.CustomerInput;
 import klee.solution.bulille.pocs.blink.appserver.in.http.dtos.outputs.CustomerOutput;
-import klee.solution.bulille.pocs.blink.appserver.middle.customer.CustomerProcess; // Import CustomerProcess
-import klee.solution.bulille.pocs.blink.appserver.middle.customer.impl.CustomerServiceImpl; // For CustomerNotFoundException (remains for now)
+import klee.solution.bulille.pocs.blink.appserver.middle.customer.CustomerProcess;
 import klee.solution.bulille.pocs.blink.appserver.middle.id.CustomerId;
 import klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.customer.Customer;
-// import klee.solution.bulille.pocs.blink.appserver.middle.customer.CustomerServiceApi; // No longer directly used
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import klee.solution.bulille.pocs.blink.appserver.in.http.dtos.inputs.CustomerInput;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.http.HttpStatus;
-import klee.solution.bulille.pocs.blink.appserver.in.http.dtos.inputs.ContractInput;
-// CustomerId is already imported
-
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
 
@@ -80,7 +68,7 @@ public class CustomerController {
         }
         try {
             Customer createdCustomer = this.customerProcess.createCustomer(customerInput); // Call customerProcess
-            LOGGER.info("createCustomer successfully created customer with id: {}", createdCustomer.id());
+            LOGGER.info("createCustomer successfully created customer with id: {}", createdCustomer.id);
             return ResponseEntity.status(HttpStatus.CREATED).body(CustomerOutput.from(createdCustomer));
         } catch (IllegalArgumentException e) {
             LOGGER.warn("Error creating customer: {}", e.getMessage());
@@ -104,9 +92,6 @@ public class CustomerController {
             LOGGER.warn("Error adding contract to customer {}: {}", customerId, e.getMessage());
             // Consider different HTTP status for different errors (e.g., 404 for customer not found vs 400 for bad input)
             return ResponseEntity.badRequest().body(e.getMessage()); // Or a proper error DTO with e.getMessage()
-        } catch (CustomerServiceImpl.CustomerNotFoundException e) { // Updated exception type
-            LOGGER.warn("Customer not found for id: {} when trying to add contract", customerId);
-            return ResponseEntity.notFound().build();
         } catch (Exception e) { // Catch unexpected errors
             LOGGER.error("Unexpected error adding contract to customer {}: {}", customerId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());

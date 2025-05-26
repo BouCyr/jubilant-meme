@@ -51,9 +51,9 @@ class CustomerStorageImpl implements CustomerStorageApi {
     @Override
     @NonNull
     public Customer save(@NonNull Customer customer) {
-        LOGGER.info("CustomerStorage.save called for customer: {}", customer.id()); // Assuming customer has an id or relevant field for logging
+        LOGGER.info("CustomerStorage.save called for customer: {}", customer.id); // Assuming customer has an id or relevant field for logging
         Customer savedCustomer = this.customerRepository.save(customer);
-        LOGGER.info("CustomerStorage.save finished for customer: {}", savedCustomer.id());
+        LOGGER.info("CustomerStorage.save finished for customer: {}", savedCustomer.id);
         return savedCustomer;
     }
 }
