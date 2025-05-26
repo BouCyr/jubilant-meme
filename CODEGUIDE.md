@@ -106,6 +106,73 @@ Each implementation (Process, service, repository/out classes ) should pretty mu
 
 _Yes, there will a lot of those functional interfaces_
 
+**Exemple**
+
+ - FooController has an API allowing the update of a Foo document
+
+in.http.FooController will look like :
+```java
+@PutMapping
+public FooOutput update(FooInput input){
+    LOGGER.info("updating Foo");
+    //check input validity
+    this.fooUpdater.update(input);
+}
+```
+middle.process.FooUpdater will look like:
+```java
+@FunctionalInterface
+public interface FooUpdater {
+  FooOutput update(FooInput input) ;
+  
+  default List<FooOutput> update(Collection<FooInput> inputs){
+      return inputs.stream().map(i->this.update(i)).toList();
+  }
+}
+```
+With :
+```java
+@Service
+public class FooUpdateProcess implements FooUpdater {
+
+    @Autowired
+    FooUpdateService fooUpdateService;
+    @Transactional
+    @Override
+    public FooOutput update(FooInput input) {
+        return this.fooUpdateService.update(input);
+    }
+}
+```
+With : 
+```java
+@FunctionalService
+public interface FooUpdateService {
+    FooOutput update(FooInput input);
+}
+```
+With :
+
+```java
+@Service
+public class FooService implements FooUpdateService{
+    
+    @Autowired FooFinder fooFinder;
+    @Autowired FooWriter fooWriter;
+
+    public  FooOutput update(FooInput input){
+        var exising = this.fooFinder.find(new FooId(input.id()));
+        if(existing.isAbsent()){
+            throw new IllegalArgumentException("Cannot update before creation");
+        }else{
+            return this.fooUpdateService.update(input);
+        }
+    }
+}
+```
+With `FooFinder` and `FooWriter` being functional interfaces defined in out.foo.
+
+They are implemented by `FooStorage` (itself package private in out.foo), that use a FooRepo (that extends MongoRepository), unwraps the id and calls the repository.
 
 ## Code writing
 
