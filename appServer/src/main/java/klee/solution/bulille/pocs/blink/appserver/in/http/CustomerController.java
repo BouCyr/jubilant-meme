@@ -4,7 +4,10 @@ import klee.solution.bulille.pocs.blink.appserver.in.http.dtos.inputs.ContractIn
 import klee.solution.bulille.pocs.blink.appserver.in.http.dtos.inputs.CustomerInput;
 import klee.solution.bulille.pocs.blink.appserver.in.http.dtos.outputs.CustomerOutput;
 import klee.solution.bulille.pocs.blink.appserver.middle.id.CustomerId;
-import klee.solution.bulille.pocs.blink.appserver.middle.process.CustomerProcessing;
+import klee.solution.bulille.pocs.blink.appserver.middle.process.customer.ContractAdder;
+import klee.solution.bulille.pocs.blink.appserver.middle.process.customer.CustomerCreator;
+import klee.solution.bulille.pocs.blink.appserver.middle.process.customer.CustomerFinder;
+import klee.solution.bulille.pocs.blink.appserver.middle.process.customer.CustomerSearcher;
 import klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.customer.Customer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -20,10 +23,16 @@ import java.util.Optional;
 public class CustomerController {
     private static final org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger(CustomerController.class);
 
-    private final CustomerProcessing customerProcess; // Changed type to CustomerProcessing
+    private final CustomerFinder customerFinder;
+    private final CustomerSearcher customerSearcher;
+    private final CustomerCreator customerCreator;
+    private final ContractAdder contractAdder;
 
-    public CustomerController(CustomerProcessing customerProcess) { // Changed constructor parameter type
-        this.customerProcess = customerProcess;
+    public CustomerController(CustomerFinder customerFinder, CustomerSearcher customerSearcher, CustomerCreator customerCreator, ContractAdder contractAdder) {
+        this.customerFinder = customerFinder;
+        this.customerSearcher = customerSearcher;
+        this.customerCreator = customerCreator;
+        this.contractAdder = contractAdder;
     }
 
     @GetMapping("/{id}")
@@ -31,7 +40,7 @@ public class CustomerController {
         LOGGER.info("getCustomer called with id: {}", id);
         try {
             var customerId = new CustomerId(id);
-            Optional<Customer> customer = this.customerProcess.find(customerId);
+            Optional<Customer> customer = this.customerFinder.find(customerId);
 
             if (customer.isPresent()) {
                 LOGGER.info("getCustomer found customer for id: {}", id);
@@ -57,7 +66,7 @@ public class CustomerController {
         LOGGER.info("searchCustomers called with nameQuery: {}, page: {}, size: {}", nameQuery, page, size);
         try {
             Pageable pageable = PageRequest.of(page, size);
-            Page<CustomerOutput> customers = this.customerProcess.searchCustomers(nameQuery, pageable);
+            Page<CustomerOutput> customers = this.customerSearcher.searchCustomers(nameQuery, pageable);
             LOGGER.info("searchCustomers returning {} customers.", customers.getTotalElements());
             return ResponseEntity.ok(customers);
         } catch (Exception e) {
@@ -75,7 +84,7 @@ public class CustomerController {
                 LOGGER.warn("createCustomer failed due to missing required fields: {}", customerInput);
                 return ResponseEntity.badRequest().build(); // Or throw a custom exception
             }
-            Customer createdCustomer = this.customerProcess.createCustomer(customerInput);
+            Customer createdCustomer = this.customerCreator.createCustomer(customerInput);
             LOGGER.info("createCustomer completed successfully for customerId: {}", createdCustomer.id);
             return ResponseEntity.status(HttpStatus.CREATED).body(CustomerOutput.from(createdCustomer));
         } catch (IllegalArgumentException e) {
@@ -93,7 +102,7 @@ public class CustomerController {
             @RequestBody ContractInput contractInput) {
         LOGGER.info("addContractToCustomer called for customerId: {}", customerId);
         try {
-            Customer updatedCustomer = this.customerProcess.addContract(new CustomerId(customerId), contractInput);
+            Customer updatedCustomer = this.contractAdder.addContract(new CustomerId(customerId), contractInput);
             LOGGER.info("addContractToCustomer completed successfully for customerId: {}", customerId);
             return ResponseEntity.ok(CustomerOutput.from(updatedCustomer));
         } catch (IllegalArgumentException e) {

@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 
 
 @Component
-class CustomerService implements CustomerServicing {
+class CustomerService implements CustomerFinderService, CustomerSearcherService, CustomerCreatorService, ContractAdderService {
     private static final org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger(CustomerService.class);
 
     private final CustomerStorageOperations customerStorage;
