@@ -5,9 +5,10 @@ import java.time.LocalDate;
 import java.util.List;
 // Add validation annotations if desired
 
-public class ContractInput {
-    public ContractType type;
-    public LocalDate startDate;
-    public LocalDate endDate; // Optional, especially for PERMANENT type
-    public List<SoldPrestationInput> soldPrestations;
+public record ContractInput(
+    ContractType type,
+    LocalDate startDate,
+    LocalDate endDate, // Optional, especially for PERMANENT type
+    List<SoldPrestationInput> soldPrestations
+) {
 }
