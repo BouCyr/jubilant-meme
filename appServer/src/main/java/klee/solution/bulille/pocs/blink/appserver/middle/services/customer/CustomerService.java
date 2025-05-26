@@ -1,11 +1,9 @@
-package klee.solution.bulille.pocs.blink.appserver.middle;
+package klee.solution.bulille.pocs.blink.appserver.middle.services.customer;
 
 import klee.solution.bulille.pocs.blink.appserver.in.http.dtos.outputs.CustomerOutput;
 import klee.solution.bulille.pocs.blink.appserver.middle.id.CustomerId;
 import klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.customer.Customer;
 import klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.customer.CustomerStorageOperations;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.stereotype.Component;
 import org.springframework.lang.NonNull;
@@ -96,8 +94,8 @@ class CustomerService implements CustomerServicing {
             }
             LOGGER.info("Attempting to save new customer: {} {}", customer.firstName, customer.givenName);
             Customer savedCustomer = this.customerStorage.save(customer);
-            LOGGER.info("Successfully saved new customer with ID: {}", savedCustomer.getId());
-            LOGGER.info("createCustomer completed successfully. Customer ID: {}", savedCustomer.getId());
+            LOGGER.info("Successfully saved new customer with ID: {}", savedCustomer.id);
+            LOGGER.info("createCustomer completed successfully. Customer ID: {}", savedCustomer.id);
             return savedCustomer;
         } catch (IllegalArgumentException e) {
             throw e;

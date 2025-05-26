@@ -3,11 +3,9 @@ package klee.solution.bulille.pocs.blink.appserver.middle.process;
 import klee.solution.bulille.pocs.blink.appserver.in.http.dtos.inputs.ContractInput;
 import klee.solution.bulille.pocs.blink.appserver.in.http.dtos.inputs.CustomerInput;
 import klee.solution.bulille.pocs.blink.appserver.in.http.dtos.outputs.CustomerOutput;
-import klee.solution.bulille.pocs.blink.appserver.middle.CustomerServicing;
+import klee.solution.bulille.pocs.blink.appserver.middle.services.customer.CustomerServicing;
 import klee.solution.bulille.pocs.blink.appserver.middle.id.CustomerId;
 import klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.customer.Customer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
@@ -49,7 +47,7 @@ class CustomerProcess implements CustomerProcessing {
     public Customer createCustomer(@NonNull CustomerInput customerInput) {
         LOGGER.info("createCustomer called in CustomerProcess for customer: {} {}", customerInput.firstName(), customerInput.givenName());
         Customer customer = this.customerService.createCustomer(customerInput);
-        LOGGER.info("createCustomer successfully completed in CustomerProcess. Customer ID: {}", customer.getId());
+        LOGGER.info("createCustomer successfully completed in CustomerProcess. Customer ID: {}", customer.id);
         return customer;
     }
 
@@ -58,7 +56,7 @@ class CustomerProcess implements CustomerProcessing {
     public Customer addContract(@NonNull CustomerId customerId, @NonNull ContractInput contractInput) {
         LOGGER.info("addContract called in CustomerProcess for customerId: {} with contract type: {}", customerId.id(), contractInput.type());
         Customer customer = this.customerService.addContract(customerId, contractInput);
-        LOGGER.info("addContract successfully completed in CustomerProcess for customerId: {}. New contract ID: {}", customerId.id(), customer.getContracts().get(customer.getContracts().size()-1).id); // Assuming new contract is last
+        LOGGER.info("addContract successfully completed in CustomerProcess for customerId: {}. New contract ID: {}", customerId.id(), customer.contracts.getLast().id); // Assuming new contract is last
         return customer;
     }
 }

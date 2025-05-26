@@ -1,27 +1,17 @@
 package klee.solution.bulille.pocs.blink.appserver.in.http;
 
+import klee.solution.bulille.pocs.blink.appserver.in.http.dtos.inputs.ContractInput;
+import klee.solution.bulille.pocs.blink.appserver.in.http.dtos.inputs.CustomerInput;
 import klee.solution.bulille.pocs.blink.appserver.in.http.dtos.outputs.CustomerOutput;
 import klee.solution.bulille.pocs.blink.appserver.middle.id.CustomerId;
-import klee.solution.bulille.pocs.blink.appserver.middle.process.CustomerProcessing; // Modified import
+import klee.solution.bulille.pocs.blink.appserver.middle.process.CustomerProcessing;
 import klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.customer.Customer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import klee.solution.bulille.pocs.blink.appserver.in.http.dtos.inputs.CustomerInput;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.http.HttpStatus;
-import klee.solution.bulille.pocs.blink.appserver.in.http.dtos.inputs.ContractInput;
-// CustomerId is already imported
-
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
 
@@ -81,13 +71,12 @@ public class CustomerController {
         LOGGER.info("createCustomer called with firstName: {}", customerInput.firstName());
         try {
             // Basic validation example (can be enhanced with @Valid and validation annotations on DTO)
-            if (customerInput == null || customerInput.firstName() == null || customerInput.firstName().trim().isEmpty() ||
-                customerInput.givenName() == null || customerInput.givenName().trim().isEmpty()) {
+            if (customerInput.firstName() == null || customerInput.firstName().trim().isEmpty() || customerInput.givenName() == null || customerInput.givenName().trim().isEmpty()) {
                 LOGGER.warn("createCustomer failed due to missing required fields: {}", customerInput);
                 return ResponseEntity.badRequest().build(); // Or throw a custom exception
             }
             Customer createdCustomer = this.customerProcess.createCustomer(customerInput);
-            LOGGER.info("createCustomer completed successfully for customerId: {}", createdCustomer.getId());
+            LOGGER.info("createCustomer completed successfully for customerId: {}", createdCustomer.id);
             return ResponseEntity.status(HttpStatus.CREATED).body(CustomerOutput.from(createdCustomer));
         } catch (IllegalArgumentException e) {
             LOGGER.warn("createCustomer failed due to bad request: {}", e.getMessage());

@@ -3,20 +3,14 @@ package klee.solution.bulille.pocs.blink.appserver.in.http;
 import klee.solution.bulille.pocs.blink.appserver.in.http.dtos.inputs.ActivityInput;
 import klee.solution.bulille.pocs.blink.appserver.middle.id.ContractId;
 import klee.solution.bulille.pocs.blink.appserver.middle.id.CustomerId;
-import klee.solution.bulille.pocs.blink.appserver.middle.process.ActivityProcessing; // Modified import
 import klee.solution.bulille.pocs.blink.appserver.middle.id.SalesSystemId;
+import klee.solution.bulille.pocs.blink.appserver.middle.process.activity.ActivityCreation;
+import klee.solution.bulille.pocs.blink.appserver.middle.process.activity.ActivityListing;
 import klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.activity.Activity;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 
@@ -25,10 +19,12 @@ import java.util.List;
 public class ActivityController {
     private static final org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger(ActivityController.class);
 
-    private final ActivityProcessing activityProcess; // Changed type to ActivityProcessing
+    private final ActivityListing activityFinder;
+    private final ActivityCreation activityCreator;
 
-    public ActivityController(ActivityProcessing activityProcess) { // Changed constructor parameter type
-        this.activityProcess = activityProcess;
+    public ActivityController(ActivityListing activityProcess, ActivityCreation activityCreator) { // Changed constructor parameter type
+        this.activityFinder = activityProcess;
+        this.activityCreator = activityCreator;
     }
 
     @PostMapping
@@ -36,15 +32,17 @@ public class ActivityController {
         LOGGER.info("addActivity called with customerId: {}", activityInput.customerId());
         try {
             // Basic validation of input DTO (can be enhanced with @Valid)
-            if (activityInput == null || activityInput.customerId() == null || activityInput.contractId() == null ||
-                activityInput.salesSystemId() == null || activityInput.doneOn() == null) {
+            if (activityInput.customerId() == null
+                    || activityInput.contractId() == null
+                    || activityInput.salesSystemId() == null
+                    || activityInput.doneOn() == null) {
                 LOGGER.warn("addActivity failed due to missing required fields in input: {}", activityInput);
                 return ResponseEntity.badRequest().body("Missing required fields in activity input.");
             }
             CustomerId customerId = new CustomerId(activityInput.customerId());
             ContractId contractId = new ContractId(activityInput.contractId());
             SalesSystemId salesSystemId = new SalesSystemId(activityInput.salesSystemId());
-            Activity createdActivity = this.activityProcess.addActivity(customerId, contractId, salesSystemId, activityInput.doneOn(), activityInput.unitsConsumed());
+            Activity createdActivity = this.activityCreator.create(customerId, contractId, salesSystemId, activityInput.doneOn(), activityInput.unitsConsumed());
             LOGGER.info("addActivity completed successfully for customerId: {}", activityInput.customerId());
             return ResponseEntity.status(HttpStatus.CREATED).body(createdActivity);
         } catch (IllegalArgumentException e) {
@@ -61,7 +59,7 @@ public class ActivityController {
         LOGGER.info("getActivitiesForContract called with contractId: {}", contractId);
         try {
             ContractId typedContractId = new ContractId(contractId);
-            List<Activity> activities = this.activityProcess.getActivitiesForContract(typedContractId);
+            List<Activity> activities = this.activityFinder.find(typedContractId);
             LOGGER.info("getActivitiesForContract returning {} activities for contractId: {}", activities.size(), contractId);
             // No activities found is not an error, just an empty list.
             return ResponseEntity.ok(activities);

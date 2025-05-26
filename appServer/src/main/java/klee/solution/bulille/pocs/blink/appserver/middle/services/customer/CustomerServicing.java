@@ -1,4 +1,4 @@
-package klee.solution.bulille.pocs.blink.appserver.middle;
+package klee.solution.bulille.pocs.blink.appserver.middle.services.customer;
 
 import klee.solution.bulille.pocs.blink.appserver.in.http.dtos.inputs.ContractInput;
 import klee.solution.bulille.pocs.blink.appserver.in.http.dtos.inputs.CustomerInput;

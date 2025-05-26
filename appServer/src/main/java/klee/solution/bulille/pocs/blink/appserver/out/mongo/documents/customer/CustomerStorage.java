@@ -66,13 +66,13 @@ class CustomerStorage implements CustomerStorageOperations {
 
     @Override
     public Customer save(@NonNull Customer customer) {
-        LOGGER.info("Attempting to save customer with current id (if any): {}", customer.getId());
+        LOGGER.info("Attempting to save customer with current id (if any): {}", customer.id);
         try {
             Customer savedCustomer = this.customerRepository.save(customer);
-            LOGGER.info("Successfully saved customer with id: {}", savedCustomer.getId());
+            LOGGER.info("Successfully saved customer with id: {}", savedCustomer.id);
             return savedCustomer;
         } catch (Exception e) {
-            LOGGER.error("Error in save for customer ID {}: {}", customer.getId(), e.getMessage(), e);
+            LOGGER.error("Error in save for customer ID {}: {}", customer.id, e.getMessage(), e);
             throw e;
         }
     }

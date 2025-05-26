@@ -1,10 +1,12 @@
-package klee.solution.bulille.pocs.blink.appserver.middle;
+package klee.solution.bulille.pocs.blink.appserver.middle.services.activity;
 
 import klee.solution.bulille.pocs.blink.appserver.middle.id.ContractId;
 import klee.solution.bulille.pocs.blink.appserver.middle.id.CustomerId;
 import klee.solution.bulille.pocs.blink.appserver.middle.id.SalesSystemId;
 import klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.activity.Activity;
-import klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.activity.ActivityRepository;
+import klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.activity.ActivityFinderByContract;
+import klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.activity.ActivityFinderByContractAndPresta;
+import klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.activity.ActivityWriter;
 import klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.customer.Customer;
 import klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.customer.CustomerRepository;
 import klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.customer.Contract;
@@ -12,8 +14,6 @@ import klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.customer.S
 import klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.prestation.Prestation;
 import klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.prestation.PrestationRepository;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.lang.NonNull;
 
@@ -21,23 +21,28 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Service
-class ActivityService implements ActivityServicing {
+class ActivityService implements ActivityCreator, ActivityLister {
     private static final org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger(ActivityService.class);
 
-    private final ActivityRepository activityRepository;
-    private final CustomerRepository customerRepository; 
+    private final CustomerRepository customerRepository;
     private final PrestationRepository prestationRepository; 
+    private final ActivityFinderByContractAndPresta findByContractIdAndPrestation;
+    private final ActivityFinderByContract findByContractId;
+    private final ActivityWriter activityWriter;
 
-    public ActivityService(ActivityRepository activityRepository,
-                           CustomerRepository customerRepository,
-                           PrestationRepository prestationRepository) {
-        this.activityRepository = activityRepository;
+    public ActivityService(
+
+            CustomerRepository customerRepository,
+            PrestationRepository prestationRepository, ActivityFinderByContractAndPresta findByContractIdAndPrestation, ActivityFinderByContract findByContractId, ActivityWriter activityWriter) {
         this.customerRepository = customerRepository;
         this.prestationRepository = prestationRepository;
+        this.findByContractIdAndPrestation = findByContractIdAndPrestation;
+        this.findByContractId = findByContractId;
+        this.activityWriter = activityWriter;
     }
 
     @Override
-    public Activity addActivity(@NonNull CustomerId customerId, @NonNull ContractId contractId, @NonNull SalesSystemId salesSystemId, @NonNull LocalDate doneOn, double unitsConsumed) {
+    public Activity create(@NonNull CustomerId customerId, @NonNull ContractId contractId, @NonNull SalesSystemId salesSystemId, @NonNull LocalDate doneOn, double unitsConsumed) {
         LOGGER.info("addActivity called for customerId: {}, contractId: {}, salesSystemId: {}", customerId.id(), contractId.value(), salesSystemId.value());
         try {
             if (unitsConsumed <= 0) {
@@ -80,10 +85,12 @@ class ActivityService implements ActivityServicing {
                 });
 
             LOGGER.info("Fetching existing activities for contractId: {} and salesSystemId: {}", contractId.value(), salesSystemId.value());
-            List<Activity> existingActivitiesForPrestationInContract = this.activityRepository.findByContractIdAndSalesSystemId(contractId.value(), salesSystemId.value());
+            List<Activity> existingActivitiesForPrestationInContract = this.findByContractIdAndPrestation.byContractAndItem(
+                    contractId,
+                    salesSystemId);
 
             double totalUnitsConsumedSoFar = existingActivitiesForPrestationInContract.stream()
-                .mapToDouble(Activity::unitsConsumed)
+                .mapToDouble(a -> a.unitsConsumed)
                 .sum();
 
             if (totalUnitsConsumedSoFar + unitsConsumed > soldPrestationInContract.units) {
@@ -110,9 +117,9 @@ class ActivityService implements ActivityServicing {
             newActivity.unitsConsumed = unitsConsumed;
 
             LOGGER.info("Attempting to save new activity for customerId: {}", customerId.id());
-            Activity savedActivity = this.activityRepository.save(newActivity);
-            LOGGER.info("Successfully saved new activity with ID: {} for customerId: {}", savedActivity.getId(), customerId.id());
-            LOGGER.info("addActivity completed successfully. Activity ID: {}", savedActivity.getId());
+            Activity savedActivity = this.activityWriter.save(newActivity);
+            LOGGER.info("Successfully saved new activity with ID: {} for customerId: {}", savedActivity.id, customerId.id());
+            LOGGER.info("addActivity completed successfully. Activity ID: {}", savedActivity.id);
             return savedActivity;
         } catch (IllegalArgumentException e) {
             // Already logged with WARN, rethrow for controller to handle
@@ -124,7 +131,7 @@ class ActivityService implements ActivityServicing {
     }
 
     @Override
-    public List<Activity> getActivitiesForContract(@NonNull ContractId contractId) {
+    public List<Activity> list(@NonNull ContractId contractId) {
         LOGGER.info("getActivitiesForContract called for contractId: {}", contractId.value());
         // contractId is @NonNull, so no null check needed by contract. The existing check for trim().isEmpty() is still valid.
         if (contractId.value().trim().isEmpty()) {
@@ -133,7 +140,7 @@ class ActivityService implements ActivityServicing {
         }
         try {
             LOGGER.info("Fetching activities for contractId: {}", contractId.value());
-            List<Activity> activities = this.activityRepository.findByContractId(contractId.value());
+            List<Activity> activities = this.findByContractId.byContract(contractId);
             LOGGER.info("getActivitiesForContract completed successfully. Found {} activities for contractId: {}", activities.size(), contractId.value());
             return activities;
         } catch (Exception e) {

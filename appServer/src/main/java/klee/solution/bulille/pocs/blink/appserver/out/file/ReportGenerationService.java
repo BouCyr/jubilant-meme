@@ -2,8 +2,9 @@ package klee.solution.bulille.pocs.blink.appserver.out.file;
 
 import com.opencsv.CSVWriter;
 import klee.solution.bulille.pocs.blink.appserver.config.FileStorageProperties;
+import klee.solution.bulille.pocs.blink.appserver.middle.id.ContractId;
 import klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.activity.Activity;
-import klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.activity.ActivityRepository;
+import klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.activity.ActivityFinderByContract;
 import klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.customer.Customer;
 import klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.customer.CustomerRepository;
 import klee.solution.bulille.pocs.blink.appserver.out.mongo.documents.customer.Contract;
@@ -35,19 +36,20 @@ class ReportGenerationService implements ReportGeneration { // Modified class de
     private static final org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger(ReportGenerationService.class);
 
     private final CustomerRepository customerRepository;
-    private final ActivityRepository activityRepository;
     private final PrestationRepository prestationRepository;
     private final Path outputReportingPath;
 
+    private final ActivityFinderByContract findByContractId;
+
     public ReportGenerationService(CustomerRepository customerRepository,
-                                   ActivityRepository activityRepository,
                                    PrestationRepository prestationRepository,
-                                   FileStorageProperties fileStorageProperties) {
+                                   FileStorageProperties fileStorageProperties,
+                                   ActivityFinderByContract findByContractId) {
         this.customerRepository = customerRepository;
-        this.activityRepository = activityRepository;
         this.prestationRepository = prestationRepository;
 
         this.outputReportingPath = fileStorageProperties.output();
+        this.findByContractId = findByContractId;
 
         try {
             Files.createDirectories(this.outputReportingPath);
@@ -72,8 +74,9 @@ class ReportGenerationService implements ReportGeneration { // Modified class de
 
         // Fetch all necessary prestations into a map for quick lookup
         LOGGER.info("Attempting to fetch all prestations for report generation.");
-        Map<String, Prestation> prestationMap = this.prestationRepository.findAll().stream()
-            .collect(Collectors.toMap(Prestation::salesSystemId, Function.identity()));
+        Map<String, Prestation> prestationMap = this.prestationRepository.findAll()
+                .stream()
+                .collect(Collectors.toMap(p ->p.salesSystemId, Function.identity()));
         LOGGER.info("Successfully fetched {} prestations into map for report generation.", prestationMap.size());
         LOGGER.debug("Prestation map created with {} entries.", prestationMap.size());
 
@@ -82,13 +85,13 @@ class ReportGenerationService implements ReportGeneration { // Modified class de
 
         int contractsProcessed = 0;
         for (Customer customer : customers) {
-            LOGGER.debug("Processing customer: {}", customer.getId());
+            LOGGER.debug("Processing customer: {}", customer.id);
             for (Contract contract : customer.contracts) {
                 // Check if contract is ongoing
                 if (contract.end == null || contract.end.isAfter(LocalDate.now().minusDays(1))) { // contract.end is inclusive
                     LOGGER.debug("Processing ongoing contract: {}", contract.id);
                     LOGGER.info("Attempting to fetch activities for contractId: {}", contract.id);
-                    List<Activity> activitiesForContract = this.activityRepository.findByContractId(contract.id);
+                    List<Activity> activitiesForContract = this.findByContractId.byContract(new ContractId(contract.id));
                     LOGGER.info("Successfully fetched {} activities for contractId: {}", activitiesForContract.size(), contract.id);
                     
                     double totalActivityBilledAmount = 0.0;
