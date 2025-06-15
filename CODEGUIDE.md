@@ -100,6 +100,8 @@ Spring beans should never depend directly on implementations.
 
 All dependencies should be expressed through Functional Interfaces ; implementations may implement as many such functional interfaces as required.
 
+The interface referenced as dependencies MUST be annotated with @FunctionalInterface, and MUST be able to be implemented by a lmabda function.
+
 Those functional interfaces will be public, the implementations will be package private.
 
 Each implementation (Process, service, repository/out classes ) should pretty much have their own package.
